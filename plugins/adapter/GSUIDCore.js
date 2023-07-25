@@ -26,7 +26,7 @@ Bot.adapter.push(new class GSUIDCoreAdapter {
   }
 
   makeLog(msg) {
-    return this.toStr(msg).replace(/("type":"(image|file)","data":").*?(")/g, "$1...$3")
+    return this.toStr(msg).replace(/("type":"(image|file)","file":").*?("}])/g, "$1...$3")
   }
 
   sendApi(ws, data) {
