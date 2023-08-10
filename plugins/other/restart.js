@@ -1,4 +1,6 @@
 import plugin from '../../lib/plugins/plugin.js'
+import cfg from '../../lib/config/config.js'
+
 import { createRequire } from 'module'
 
 const require = createRequire(import.meta.url)
@@ -18,6 +20,10 @@ export class Restart extends plugin {
       }, {
         reg: '^#(停机|关机)$',
         fnc: 'stop',
+        permission: 'master'
+      }, {
+        reg: /^#设置重启CD\s?[0-9]{0,}$/,
+        fnc: 'setInterval',
         permission: 'master'
       }]
     })
@@ -41,11 +47,23 @@ export class Restart extends plugin {
       else
         Bot.sendFriendMsg(restart.bot_id, restart.id, msg)
 
-      redis.del(this.key)
     }
   }
 
-  async restart () {
+  async restart() {
+    const restart = JSON.parse(await redis.get(this.key) ?? '{}')
+    if (restart?.time) {
+      const restartTime = restart.time + cfg.bot.restart_interval
+      const time = new Date().getTime()
+      if (time < restartTime) {
+        await this.e.reply(`重启CD冷却中（${((restartTime - time) / 1000).toFixed(2)}秒)`)
+        logger.mark(`重启CD冷却中（${((restartTime - time) / 1000).toFixed(2)}秒)`)
+        return
+      }
+    }
+
+    redis.del(this.key)
+
     await this.e.reply('开始执行重启，请稍等...')
     logger.mark(`${this.e.logFnc} 开始执行重启，请稍等...`)
 
@@ -118,5 +136,20 @@ export class Restart extends plugin {
         logger.error(`关机失败\n${error.stack}`)
       }
     })
+  }
+
+  async setInterval() {
+    const time = this.e.msg.match(/\d+/ig)[0]
+    if (time) {
+      if (Number(time) < 1000) {
+        await this.e.reply('重启CD最小设置为1000（1秒）')
+      } else {
+        cfg.bot.restart_interval = Number(time)
+        await this.e.reply(`重启CD已设置为${time / 1000}秒`)
+        logger.mark(`重启CD已设置为${time / 1000}秒`)
+      }
+    } else {
+      await this.e.reply('请输入#设置重启CD + 时间')
+    }
   }
 }
