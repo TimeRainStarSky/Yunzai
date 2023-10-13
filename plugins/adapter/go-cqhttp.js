@@ -66,6 +66,7 @@ Bot.adapter.push(new class gocqhttpAdapter {
     return data.bot.sendApi("send_msg", {
       user_id: data.user_id,
       message: this.makeMsg(msg),
+      message_type: 'private',
     })
   }
 
@@ -77,6 +78,7 @@ Bot.adapter.push(new class gocqhttpAdapter {
     return data.bot.sendApi("send_msg", {
       group_id: data.group_id,
       message: this.makeMsg(msg),
+      message_type: 'group',
     })
   }
 
