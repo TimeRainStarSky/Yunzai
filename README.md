@@ -88,7 +88,7 @@ node app
 uin: 账号
 password: '密码'
 post-format: array
-universal: ws://localhost:2536/OneBotv11
+universal: ws://localhost:2536/go-cqhttp
 ```
 
 </details>
@@ -98,7 +98,7 @@ universal: ws://localhost:2536/OneBotv11
 下载安装 [LLOneBot](https://github.com/LLOneBot/LLOneBot)，启用反向 WebSocket，添加地址：
 
 ```
-ws://localhost:2536/OneBotv11
+ws://localhost:2536/go-cqhttp
 ```
 
 </details>
