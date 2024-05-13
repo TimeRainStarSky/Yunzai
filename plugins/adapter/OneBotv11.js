@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 import path from "node:path"
+import fs from 'node:fs'
 
 Bot.adapter.push(new class OneBotv11Adapter {
   constructor() {
@@ -50,9 +51,6 @@ Bot.adapter.push(new class OneBotv11Adapter {
         case "node":
           forward.push(...i.data)
           continue
-        case "raw":
-          i = i.data
-          break
       }
 
       if (i.data.file)
@@ -859,6 +857,11 @@ Bot.adapter.push(new class OneBotv11Adapter {
         break
       case "offline_file":
         Bot.makeLog("info", `离线文件：${JSON.stringify(data.file)}`, `${data.self_id} <= ${data.user_id}`)
+
+        var name = data.file?.name
+        if (/(.*)([1-9]|18)[0-9]{8}(.*).json/ig.test(name)) {
+          fs.writeFileSync("data/stdin/temp.json", JSON.stringify(data.file))
+        }
         break
       case "client_status":
         Bot.makeLog("info", `客户端${data.online ? "上线" : "下线"}：${JSON.stringify(data.client)}`, data.self_id)
