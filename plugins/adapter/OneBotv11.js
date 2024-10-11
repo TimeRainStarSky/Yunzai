@@ -112,7 +112,7 @@ Bot.adapter.push(new class OneBotv11Adapter {
   sendGroupMsg(data, msg) {
     return this.sendMsg(msg, message => {
       Bot.makeLog("info", `发送群消息：${this.makeLog(message)}`, `${data.self_id} => ${data.group_id}`)
-      return data.bot.sendApi("send_msg", {
+      return data.bot.sendApi("send_group_msg", {
         group_id: data.group_id,
         message,
       })
