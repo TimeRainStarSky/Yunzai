@@ -142,7 +142,7 @@ export class add extends plugin {
     if (!this.e.msg?.includes("#结束添加")) {
       /** 添加内容 */
       for (const i of this.e.message) {
-        if (i.url) i.file = await this.saveFile(i)
+        if (i.url) { i.file = await this.saveFile(i); delete i.url; }
         if (i.type == "at" && i.qq == this.e.self_id) continue
         context.message.push(i)
       }
