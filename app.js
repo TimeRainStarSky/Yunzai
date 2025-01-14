@@ -13,8 +13,9 @@ switch (process.env.app_type || process.argv[2]) {
     process.exit()
   } default: {
     const { spawnSync } = await import("node:child_process")
+    const otherArgv = [...process.argv].splice(2)
     while (!spawnSync(process.argv[0],
-      [process.argv[1], "start"],
+      [process.argv[1], "start", ...otherArgv],
       { stdio: "inherit" },
     ).status) {}
     process.exit()
