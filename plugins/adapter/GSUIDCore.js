@@ -159,6 +159,7 @@ Bot.adapter.push(new class GSUIDCoreAdapter {
       bot: Bot[id],
       group_id: group_id,
       user_id: user_id,
+      getAvatarUrl: () => i.avatar
     }
     return {
       ...this.pickFriend(id, user_id),
@@ -236,8 +237,7 @@ Bot.adapter.push(new class GSUIDCoreAdapter {
       this.makeBot(data, ws)
     }
 
-    if (!data.bot.fl.has(data.user_id))
-      data.bot.fl.set(data.user_id, data.sender)
+    data.bot.fl.set(data.user_id, data.sender)
 
     for (const i of raw.content) {
       switch (i.type) {
@@ -285,8 +285,7 @@ Bot.adapter.push(new class GSUIDCoreAdapter {
         gml = new Map
         data.bot.gml.set(data.group_id, gml)
       }
-      if (!gml.has(data.user_id))
-        gml.set(data.user_id, data.sender)
+      gml.set(data.user_id, data.sender)
 
       Bot.makeLog("info", `群消息：${data.raw_message}`, `${data.self_id} <= ${data.group_id}, ${data.user_id}`, true)
     }
