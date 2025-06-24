@@ -112,7 +112,7 @@ export class add extends plugin {
   /** 获取添加关键词 */
   getKeyWord() {
     this.e.isGlobal = Boolean(this.e.msg.match(/^#全局/))
-    this.keyWord = this.trimAlias(this.e.raw_message.replace(/#(全局)?(添加|删除)/, "").trim())
+    this.keyWord = this.trimAlias(this.e.msg.replace(/#(全局)?(添加|删除)/, "").trim())
   }
 
   /** 过滤别名 */
@@ -143,7 +143,11 @@ export class add extends plugin {
           delete i.fid
         }
         if (i.type == "at" && i.qq == this.e.self_id) continue
-        context.message.push(i)
+        if (i.type === 'image' || i.type === 'video') {
+          context.message.push({ type: i.type, file: i.file })
+        } else {
+          context.message.push(i)
+        }
       }
       return
     }
