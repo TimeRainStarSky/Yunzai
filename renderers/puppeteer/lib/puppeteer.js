@@ -5,6 +5,8 @@ import puppeteer from "puppeteer"
 import { ulid } from "ulid"
 import timers from "node:timers/promises"
 import fs from "node:fs/promises"
+import path from 'path'
+
 // 暂时保留对原config的兼容
 import cfg from "../../../lib/config/config.js"
 
@@ -77,12 +79,12 @@ export default class Puppeteer extends Renderer {
           await redis.del(this.browserMacKey)
         }
       }
-    } catch {}
+    } catch { }
 
     if (!this.browser || !connectFlag) {
       let config = this.config
       if (!config.userDataDir) {
-        await fs.rm("temp/puppeteer", { force: true, recursive: true }).catch(() => {})
+        await fs.rm("temp/puppeteer", { force: true, recursive: true }).catch(() => { })
         config = { ...config, userDataDir: `temp/puppeteer/${ulid()}` }
       }
       // 如果没有实例，初始化puppeteer
@@ -136,7 +138,7 @@ export default class Puppeteer extends Renderer {
           break
         }
       }
-    } catch (e) {}
+    } catch (e) { }
     mac = mac.replace(/:/g, "")
     return mac
   }
@@ -159,10 +161,25 @@ export default class Puppeteer extends Renderer {
   async screenshot(name, data = {}) {
     if (!(await this.browserInit())) return false
     const pageHeight = data.multiPageHeight || 4000
-
+    const imgDir = './temp/image';
+    await fs.mkdir(imgDir, { recursive: true })
     const savePath = this.dealTpl(name, data)
     if (!savePath) return false
 
+    const md5 = savePath.match(/_([a-f0-9]{32})\.html$/)[1];
+    if (!md5) {
+      logger.error(`[图片生成][${name}] 模板md5获取失败`)
+      return false
+    } else {
+      logger.debug(`[图片生成][${name}] 模板md5: ${md5}`)
+      await fs.mkdir(imgDir, { recursive: true })
+      const files = await fs.readdir(imgDir);
+      const found = files.find(f => f.includes(md5) && /\.(png|jpe?g|gif|webp)$/i.test(f));
+      if (found) {
+        logger.info(`[图片生成][${name}] 图片已存在,返回缓存`)
+        return fs.readFile(path.join(imgDir, found));
+      }
+    }
     let buff = ""
     const start = Date.now()
 
@@ -182,6 +199,13 @@ export default class Puppeteer extends Renderer {
       }, puppeteerTimeout)
     }
 
+    const randData = {
+      type: data.imgType || "jpeg",
+      omitBackground: data.omitBackground || false,
+      quality: data.quality || 90,
+      path: data.path || "",
+    }
+
     try {
       const page = await this.browser.newPage()
       const pageGotoParams = lodash.extend(this.pageGotoParams, data.pageGotoParams || {})
@@ -192,13 +216,6 @@ export default class Puppeteer extends Renderer {
       const boundingBox = await body.boundingBox()
       // 分页数
       let num = 1
-
-      const randData = {
-        type: data.imgType || "jpeg",
-        omitBackground: data.omitBackground || false,
-        quality: data.quality || 90,
-        path: data.path || "",
-      }
 
       if (data.multiPage) {
         randData.type = "jpeg"
@@ -273,6 +290,7 @@ export default class Puppeteer extends Renderer {
     }
 
     this.restart()
+    await fs.writeFile(path.join(imgDir, `${md5}.${randData.type}`), ret[0]);
     return data.multiPage ? ret : ret[0]
   }
 
