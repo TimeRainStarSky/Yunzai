@@ -14,6 +14,12 @@ Bot.adapter.push(
 
         constructor() {
             this.config = cfg.getAllCfg("satori") || {}
+
+            // 检查是否启用适配器
+            if (!this.config.enable) {
+                return
+            }
+
             this.httpEndpoint = this.config.http_endpoint || "http://127.0.0.1:5140/satori/v1"
             this.wsEndpoint = this.config.ws_endpoint || "ws://127.0.0.1:5140/satori/v1/events"
             this.token = this.config.token && this.config.token.trim() !== "" ? this.config.token : null
@@ -673,6 +679,11 @@ Bot.adapter.push(
         }
 
         load() {
+            // 检查是否启用适配器
+            if (!this.config.enable) {
+                return
+            }
+
             setTimeout(() => {
                 this.connectWebSocket()
             }, 1000)
