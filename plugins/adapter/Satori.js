@@ -176,9 +176,20 @@ Bot.adapter.push(
                         elements.push(`<quote id="${item.data.id}"/>`)
                         break
                     case "button":
-                        const btnText = item.data.text || ""
-                        const btnId = item.data.id || ""
-                        elements.push(`<button id="${btnId}">${btnText}</button>`)
+                        if (Array.isArray(item.data)) {
+                            // 处理按钮数组格式
+                            for (const row of item.data) {
+                                for (const btn of row) {
+                                    const btnText = btn.text || ""
+                                    const btnInput = btn.input || ""
+                                    elements.push(`<button id="${btnInput}">${btnText}</button>`)
+                                }
+                            }
+                        } else {
+                            const btnText = item.data.text || ""
+                            const btnId = item.data.id || item.data.input || ""
+                            elements.push(`<button id="${btnId}">${btnText}</button>`)
+                        }
                         break
                     case "node":
                         const nodeElements = await this.makeSatoriElements(item.data)
@@ -220,7 +231,15 @@ Bot.adapter.push(
             let channelId = data.channel_id
 
             if (!channelId || channelId === data.user_id) {
-                channelId = data.user_id
+                try {
+                    const channel = await this.sendApi("user.channel.create", {
+                        user_id: data.user_id
+                    }, data.self_id)
+                    channelId = channel.id
+                } catch (err) {
+                    Bot.makeLog("error", ["创建私聊频道失败，使用 user_id 作为 channel_id", err], data.self_id)
+                    channelId = data.user_id
+                }
             }
 
             return this.sendMsg(msg, channelId, data.self_id)
