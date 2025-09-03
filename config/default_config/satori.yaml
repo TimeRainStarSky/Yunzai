@@ -1,5 +1,8 @@
 # Satori 协议配置
 
+# 是否启用 Satori 适配器
+enable: false
+
 # HTTP API 终结点
 http_endpoint: http://127.0.0.1:5140/satori/v1
 
