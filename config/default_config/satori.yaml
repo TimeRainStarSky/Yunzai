@@ -5,9 +5,13 @@ enable: false
 
 # HTTP API 终结点
 http_endpoint: http://127.0.0.1:5140/satori/v1
+# liteloader onebot： http://127.0.0.1:5600/v1
+# server-satori： http://127.0.0.1:5140/satori/v1
 
 # WebSocket 事件终结点
 ws_endpoint: ws://127.0.0.1:5140/satori/v1/events
+# liteloader onebot： ws://127.0.0.1:5600/v1/events
+# server-satori： ws://127.0.0.1:5140/satori/v1/events
 
 # API 访问令牌
 token: ""
