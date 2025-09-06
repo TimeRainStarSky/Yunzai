@@ -39,7 +39,20 @@ Bot.adapter.push(
         "Content-Type": "application/json",
       }
 
-      const bot = Bot.bots[selfId]
+      let bot = Bot.bots[selfId]
+      // 如果指定的bot不存在，尝试查找一个可用的bot
+      if (!bot || bot.adapter !== this) {
+        const availableBots = Object.values(Bot.bots).filter(b => b.adapter === this)
+        if (availableBots.length > 0) {
+          bot = availableBots[0]
+          Bot.makeLog(
+            "warn",
+            `使用替代bot ${bot.self_id} 发送API请求，原bot ${selfId} 不存在`,
+            "Satori",
+          )
+        }
+      }
+
       if (bot && bot.adapter === this) {
         headers["Satori-Platform"] = bot.platform
         headers["Satori-User-ID"] = bot.self_id
@@ -527,6 +540,29 @@ Bot.adapter.push(
       return bot
     }
 
+    ensureBot(login) {
+      if (!login || !login.user?.id) {
+        return null
+      }
+
+      const selfId = login.user.id
+      let bot = Bot.bots[selfId]
+
+      if (!bot || bot.adapter !== this) {
+        bot = this.makeBot(login)
+        Bot.bots[bot.self_id] = bot
+        Bot.uin.push(bot.self_id)
+        Bot.emit("online", bot)
+        Bot.makeLog("mark", `注册Satori bot: ${bot.self_id}`, "Satori")
+      } else {
+        // 更新现有bot的状态信息
+        bot.status = login.status
+        bot.platform = login.platform || this.platform
+      }
+
+      return bot
+    }
+
     // WebSocket
     connectWebSocket() {
       if (this.ws) {
@@ -575,13 +611,21 @@ Bot.adapter.push(
         this.stopHeartbeat()
 
         // 清理
+        const botsToRemove = []
         for (const [self_id, bot] of Object.entries(Bot.bots)) {
           if (bot.adapter === this) {
-            delete Bot.bots[self_id]
-            Bot.uin.splice(Bot.uin.indexOf(self_id), 1)
-            Bot.makeLog("mark", `${this.name}(${this.id}) 已断开`, `${self_id}`, true)
-            Bot.emit("offline", bot)
+            botsToRemove.push(self_id)
           }
+        }
+
+        for (const self_id of botsToRemove) {
+          delete Bot.bots[self_id]
+          const index = Bot.uin.indexOf(self_id)
+          if (index > -1) {
+            Bot.uin.splice(index, 1)
+          }
+          Bot.makeLog("mark", `${this.name}(${this.id}) 已断开`, `${self_id}`, true)
+          Bot.emit("offline", { self_id })
         }
 
         // 重连
@@ -610,9 +654,13 @@ Bot.adapter.push(
               let bot = Bot.bots[loginId]
 
               if (!bot || bot.adapter !== this) {
-                const availableBots = Object.values(Bot.bots).filter(b => b.adapter === this)
-                if (availableBots.length > 0) {
-                  bot = availableBots[0]
+                if (event.login && event.login.user?.id) {
+                  bot = this.ensureBot(event.login)
+                } else {
+                  const availableBots = Object.values(Bot.bots).filter(b => b.adapter === this)
+                  if (availableBots.length > 0) {
+                    bot = availableBots[0]
+                  }
                 }
               }
 
@@ -624,7 +672,7 @@ Bot.adapter.push(
                 Bot.makeLog(
                   "error",
                   [
-                    "无法找到对应的 bot 实例",
+                    "无法找到或创建对应的 bot 实例",
                     {
                       loginId,
                       eventType: event.type,
@@ -649,15 +697,14 @@ Bot.adapter.push(
 
             for (const login of message.body.logins) {
               if (login.user?.id) {
-                const bot = this.makeBot(login)
-                Bot.bots[bot.self_id] = bot
-                Bot.uin.push(bot.self_id)
-                loginIds.push(bot.self_id)
-                Bot.emit("online", bot)
+                const bot = this.ensureBot(login)
+                if (bot) {
+                  loginIds.push(bot.self_id)
+                }
               }
             }
 
-            // 将koishi沙盒 排在第一个
+            // 将koishi沙盒排在第一个
             loginIds.sort((a, b) => {
               if (a === "koishi") return -1
               if (b === "koishi") return 1
