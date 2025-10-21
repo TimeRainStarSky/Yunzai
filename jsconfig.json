@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "types": [
+      "@kaguyajs/trss-yunzai-types"
+    ]
+  },
+  "exclude": [
+    "node_modules/",
+    "temp/"
+  ]
+}

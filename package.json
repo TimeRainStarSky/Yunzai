@@ -43,6 +43,7 @@
     "yaml": "^2.8.1"
   },
   "devDependencies": {
+    "@kaguyajs/trss-yunzai-types": "latest",
     "prettier": "^3.6.2"
   },
   "imports": {
