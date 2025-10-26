@@ -14,12 +14,12 @@ export function watcher(): Promise<void>;
  * @param opts.replacer 配置文本替换函数
  * @returns 配置对象和配置保存函数
  */
-export default function makeConfig(name: string, config?: object, keep?: object, opts?: {
+export default function makeConfig<T = any>(name: string, config?: object, keep?: object, opts?: {
     watch: boolean;
     replacer: Function;
 }): Promise<{
     /** 配置对象 */
-    config: object;
+    config: T;
     /** 保存配置 */
     configSave: () => Promise<void>;
 }>;
