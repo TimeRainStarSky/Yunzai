@@ -122,6 +122,7 @@ Bot.adapter.push(
         bot_self_id: data.bot.bot_self_id,
         target_type: "direct",
         target_id: data.user_id,
+        msg_id: data.message_id,
         content,
       })
       return { message_id: Date.now().toString(36) }
@@ -141,6 +142,7 @@ Bot.adapter.push(
         bot_self_id: data.bot.bot_self_id,
         target_type: target[0],
         target_id: target[1],
+        msg_id: data.message_id,
         content,
       })
       return { message_id: Date.now().toString(36) }
