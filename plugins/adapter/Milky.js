@@ -144,7 +144,16 @@ ws:
             sendApi: (action, params) => this.callApi(apiBaseUrl, config.access_token, action, params),
             info: loginInfo.data,
             get uin() { return this.info.uin || this.info.user_id },
-            get nickname() { return this.info.nickname },
+            uin: self_id,
+            nickname: loginInfo.data.nickname,
+            version: {
+              id: "Milky",
+              name: "Milky",
+              version: this.version,
+            },
+            stat: {
+              start_time: Date.now() / 1000,
+            },
             fl: new Map(),
             gl: new Map(),
             gml: new Map(),
@@ -213,12 +222,40 @@ ws:
           Bot[self_id].getFriendMap()
           Bot[self_id].getGroupMap()
 
-          Bot.makeLog("mark", `MilkyAdapter v${this.version} ${Bot[self_id].nickname}(${self_id}) 已连接`, self_id)
+          // 获取协议端详细信息
+          Bot[self_id].get_impl_info().then(impl => {
+            //Bot.makeLog("info", `[Milky] get_impl_info 响应: ${JSON.stringify(impl)}`)
+            if (impl.retcode === 0 && impl.data) {
+              const name = impl.data.impl_name || "Milky"
+              const version = impl.data.impl_version || this.version
+              Bot[self_id].version = { id: name, name, version }
+              Bot[self_id].apk = { display: name, version, ver: version }
+              Bot.makeLog("mark", `MilkyAdapter v${this.version} [${name} v${version}] ${Bot[self_id].nickname}(${self_id}) 已连接`, self_id)
+            } else {
+              Bot.makeLog("mark", `MilkyAdapter v${this.version} ${Bot[self_id].nickname}(${self_id}) 已连接`, self_id)
+            }
+          }).catch(err => {
+            Bot.makeLog("error", `[Milky] 获取协议端信息失败: ${err.message}`)
+            Bot.makeLog("mark", `MilkyAdapter v${this.version} ${Bot[self_id].nickname}(${self_id}) 已连接`, self_id)
+          })
+
           Bot.em(`connect.${self_id}`, { self_id, bot: Bot[self_id] })
         } else {
-          Bot.makeLog("mark", `MilkyAdapter v${this.version} ${Bot[self_id].nickname}(${self_id}) 已连接`, self_id)
           Bot[self_id].ws = ws
           Bot[self_id].sendApi = (action, params) => this.callApi(apiBaseUrl, config.access_token, action, params)
+          if (!Bot[self_id].stat) {
+            Bot[self_id].stat = { start_time: Date.now() / 1000 }
+          }
+          // 同步协议端最新信息
+          Bot[self_id].get_impl_info().then(impl => {
+            if (impl.retcode === 0 && impl.data) {
+              const name = impl.data.impl_name || "Milky"
+              const version = impl.data.impl_version || this.version
+              Bot[self_id].version = { id: name, name, version }
+              Bot[self_id].apk = { display: name, version, ver: version }
+            }
+          })
+          Bot.makeLog("mark", `MilkyAdapter v${this.version} ${Bot[self_id].nickname}(${self_id}) 已重连`, self_id)
           Bot[self_id].send_private_msg = (user_id, msg) => this.sendPrivateMsg({ self_id, bot: Bot[self_id], user_id }, msg)
           Bot[self_id].send_group_msg = (group_id, msg) => this.sendGroupMsg({ self_id, bot: Bot[self_id], group_id }, msg)
           Bot[self_id].send_private_forward_msg = (user_id, msg) => this.sendPrivateForwardMsg({ self_id, bot: Bot[self_id], user_id }, msg)
@@ -759,9 +796,9 @@ ws:
           let uin = item.user_id || item.uin || (Bot.uin && Bot.uin[0]) || 80000000
           let user_id = Number(uin)
           if (isNaN(user_id) || user_id === 0) user_id = 80000000
-          
+
           const nickname = item.nickname || item.sender_name || item.name || "机器人"
-          
+
           messages.push({
             user_id: user_id,
             uin: String(user_id),
