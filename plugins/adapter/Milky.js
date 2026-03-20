@@ -68,9 +68,9 @@ ws:
       const apiBaseUrl = `${baseUrl}/api`
 
       if (connection === "ws") {
-        setTimeout(() => this.connectWs(config, apiBaseUrl), 15000)
+        setTimeout(() => this.connectWs(config, apiBaseUrl), 12000)
       } else if (connection === "webhook") {
-        setTimeout(() => this.setupWebhook(config, apiBaseUrl), 15000)
+        setTimeout(() => this.setupWebhook(config, apiBaseUrl), 12000)
       }
     }
 
@@ -254,7 +254,20 @@ ws:
           this.makeMessage(event)
           break
         case "message_recall":
+        case "friend_nudge":
+        case "group_nudge":
+        case "group_admin_change":
+        case "group_member_increase":
+        case "group_member_decrease":
+        case "group_name_change":
+        case "group_message_reaction":
+        case "group_mute":
+        case "group_whole_mute":
           this.makeNotice(event)
+          break
+        case "friend_request":
+        case "group_join_request":
+          this.makeRequest(event)
           break
       }
     }
@@ -291,14 +304,81 @@ ws:
 
     makeNotice(data) {
       data.post_type = "notice"
-      if (data.event_type === "message_recall") {
-        data.notice_type = data.message_scene === "group" ? "group_recall" : "friend_recall"
-        data.group_id = data.message_scene === "group" ? String(data.peer_id) : undefined
-        data.operator_id = String(data.operator_id)
-        data.user_id = String(data.sender_id)
-        data.message_id = String(data.message_seq)
+      switch (data.event_type) {
+        case "message_recall":
+          data.notice_type = data.message_scene === "group" ? "group_recall" : "friend_recall"
+          data.group_id = data.message_scene === "group" ? String(data.peer_id) : undefined
+          data.operator_id = String(data.operator_id)
+          data.user_id = String(data.sender_id)
+          data.message_id = String(data.message_seq)
+          break
+        case "friend_nudge":
+          data.notice_type = "notify"
+          data.sub_type = "poke"
+          data.user_id = String(data.user_id)
+          data.operator_id = data.is_self_send ? data.self_id : data.user_id
+          data.target_id = data.is_self_receive ? data.self_id : data.user_id
+          Bot.makeLog("info", `好友戳一戳：[${data.operator_id} => ${data.target_id}]`, data.self_id)
+          break
+        case "group_nudge":
+          data.notice_type = "notify"
+          data.sub_type = "poke"
+          data.group_id = String(data.group_id)
+          data.operator_id = String(data.sender_id)
+          data.target_id = String(data.receiver_id)
+          data.user_id = data.operator_id
+          Bot.makeLog("info", `群戳一戳：[${data.group_id}: ${data.operator_id} => ${data.target_id}]`, data.self_id)
+          break
+        case "group_admin_change":
+          data.notice_type = "group_admin"
+          data.sub_type = data.is_set ? "set" : "unset"
+          data.group_id = String(data.group_id)
+          data.user_id = String(data.user_id)
+          break
+        case "group_member_increase":
+          data.notice_type = "group_increase"
+          data.sub_type = data.invitor_id ? "invite" : "approve"
+          data.group_id = String(data.group_id)
+          data.user_id = String(data.user_id)
+          data.operator_id = String(data.operator_id || data.invitor_id)
+          break
+        case "group_member_decrease":
+          data.notice_type = "group_decrease"
+          data.sub_type = data.operator_id ? (data.operator_id == data.user_id ? "leave" : "kick") : "leave"
+          data.group_id = String(data.group_id)
+          data.user_id = String(data.user_id)
+          data.operator_id = String(data.operator_id || data.user_id)
+          break
+        case "group_mute":
+          data.notice_type = "group_ban"
+          data.sub_type = data.duration > 0 ? "ban" : "lift_ban"
+          data.group_id = String(data.group_id)
+          data.user_id = String(data.user_id)
+          data.operator_id = String(data.operator_id)
+          break
+        default:
+          data.notice_type = data.event_type
+          break
       }
       Bot.em(`${data.post_type}.${data.notice_type}`, data)
+    }
+
+    makeRequest(data) {
+      data.post_type = "request"
+      if (data.event_type === "friend_request") {
+        data.request_type = "friend"
+        data.user_id = String(data.initiator_id)
+        data.comment = data.comment
+        data.flag = data.initiator_uid
+      } else {
+        data.request_type = "group"
+        data.sub_type = "add"
+        data.group_id = String(data.group_id)
+        data.user_id = String(data.initiator_id)
+        data.comment = data.comment
+        data.flag = String(data.notification_seq)
+      }
+      Bot.em(`${data.post_type}.${data.request_type}`, data)
     }
 
     parseMsg(message) {
