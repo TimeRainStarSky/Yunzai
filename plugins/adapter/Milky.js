@@ -323,10 +323,14 @@ ws:
         case "group_message_reaction":
         case "group_mute":
         case "group_whole_mute":
+        case "group_essence_message_change":
+        case "friend_file_upload":
           this.makeNotice(event)
           break
         case "friend_request":
         case "group_join_request":
+        case "group_invited_join_request":
+        case "group_invitation":
           this.makeRequest(event)
           break
       }
@@ -387,6 +391,11 @@ ws:
           data.operator_id = String(data.operator_id)
           data.user_id = String(data.sender_id)
           data.message_id = String(data.message_seq)
+          if (data.message_scene === "group") {
+            Bot.makeLog("info", `群消息撤回：${data.operator_id} => ${data.user_id} ${data.message_id}`, `${data.self_id} <= ${data.group_id}`, true)
+          } else {
+            Bot.makeLog("info", `好友消息撤回：${data.message_id}`, `${data.self_id} <= ${data.user_id}`, true)
+          }
           break
         case "friend_nudge":
           data.notice_type = "notify"
@@ -410,6 +419,7 @@ ws:
           data.sub_type = data.is_set ? "set" : "unset"
           data.group_id = String(data.group_id)
           data.user_id = String(data.user_id)
+          Bot.makeLog("info", `群管理员变更：${data.user_id} ${data.sub_type}`, `${data.self_id} <= ${data.group_id}`, true)
           break
         case "group_member_increase":
           data.notice_type = "group_increase"
@@ -417,6 +427,7 @@ ws:
           data.group_id = String(data.group_id)
           data.user_id = String(data.user_id)
           data.operator_id = String(data.operator_id || data.invitor_id)
+          Bot.makeLog("info", `群成员增加：${data.operator_id} => ${data.user_id} ${data.sub_type}`, `${data.self_id} <= ${data.group_id}`, true)
           break
         case "group_member_decrease":
           data.notice_type = "group_decrease"
@@ -424,6 +435,7 @@ ws:
           data.group_id = String(data.group_id)
           data.user_id = String(data.user_id)
           data.operator_id = String(data.operator_id || data.user_id)
+          Bot.makeLog("info", `群成员减少：${data.operator_id} => ${data.user_id} ${data.sub_type}`, `${data.self_id} <= ${data.group_id}`, true)
           break
         case "group_mute":
           data.notice_type = "group_ban"
@@ -431,30 +443,93 @@ ws:
           data.group_id = String(data.group_id)
           data.user_id = String(data.user_id)
           data.operator_id = String(data.operator_id)
+          data.duration = data.duration || 0
+          Bot.makeLog("info", `群禁言：${data.operator_id} => ${data.user_id} ${data.sub_type} ${data.duration}秒`, `${data.self_id} <= ${data.group_id}`, true)
+          break
+        case "group_whole_mute":
+          data.notice_type = "group_ban"
+          data.sub_type = data.is_mute ? "ban" : "lift_ban"
+          data.group_id = String(data.group_id)
+          data.user_id = "0"
+          data.operator_id = String(data.operator_id)
+          Bot.makeLog("info", `全员禁言：${data.operator_id} ${data.sub_type}`, `${data.self_id} <= ${data.group_id}`, true)
+          break
+        case "group_message_reaction":
+          data.notice_type = "group_msg_emoji_like"
+          data.group_id = String(data.group_id)
+          data.user_id = String(data.user_id)
+          data.message_id = String(data.message_seq)
+          data.likes = [{ emoji_id: String(data.face_id), count: data.is_add ? 1 : 0 }]
+          Bot.makeLog("info", [`群消息回应：${data.message_id}`, data.likes], `${data.self_id} <= ${data.group_id}, ${data.user_id}`, true)
+          break
+        case "group_name_change":
+          data.notice_type = "group_card"
+          data.group_id = String(data.group_id)
+          data.user_id = String(data.operator_id)
+          Bot.makeLog("info", `群名变更：${data.old_name} => ${data.new_name}`, `${data.self_id} <= ${data.group_id}`, true)
+          break
+        case "group_essence_message_change":
+          data.notice_type = "group_essence"
+          data.sub_type = data.is_set ? "add" : "delete"
+          data.group_id = String(data.group_id)
+          data.operator_id = String(data.operator_id)
+          data.message_id = String(data.message_seq)
+          Bot.makeLog("info", `群精华消息：${data.operator_id} ${data.sub_type} ${data.message_id}`, `${data.self_id} <= ${data.group_id}`, true)
+          break
+        case "friend_file_upload":
+          data.notice_type = "offline_file"
+          data.user_id = String(data.user_id)
+          data.file = { name: data.file_name, size: data.file_size, url: data.file_id }
+          Bot.makeLog("info", `好友文件上传：${data.file_name}`, `${data.self_id} <= ${data.user_id}`, true)
           break
         default:
           data.notice_type = data.event_type
           break
       }
-      Bot.em(`${data.post_type}.${data.notice_type}`, data)
+
+      // 仿照 OneBotv11 拆分 notice_type 为多级事件路径
+      // group_recall => notice_type=group, sub_type=recall
+      // group_admin => notice_type=group, sub_type=admin
+      // notify 不拆分 (戳一戳事件)
+      if (data.notice_type !== "notify") {
+        let notice = data.notice_type.split("_")
+        data.notice_type = notice.shift()
+        notice = notice.join("_")
+        if (notice) data.sub_type = notice
+      }
+
+      Bot.em(`${data.post_type}.${data.notice_type}.${data.sub_type || ""}`, data)
     }
 
     makeRequest(data) {
       data.post_type = "request"
       if (data.event_type === "friend_request") {
         data.request_type = "friend"
+        data.sub_type = "add"
         data.user_id = String(data.initiator_id)
         data.comment = data.comment
         data.flag = data.initiator_uid
+        Bot.makeLog("info", `加好友请求：${data.comment}(${data.flag})`, `${data.self_id} <= ${data.user_id}`, true)
+        data.approve = (approve) => approve ? data.bot.accept_friend_request(data.flag) : data.bot.reject_friend_request(data.flag)
+      } else if (data.event_type === "group_invitation") {
+        data.request_type = "group"
+        data.sub_type = "invite"
+        data.group_id = String(data.group_id)
+        data.user_id = String(data.initiator_id)
+        data.flag = String(data.invitation_seq)
+        Bot.makeLog("info", `入群邀请：${data.group_id} 来自 ${data.user_id} (${data.flag})`, `${data.self_id} <= ${data.group_id}`, true)
+        data.approve = (approve) => approve ? data.bot.accept_group_invitation(data.group_id, data.flag) : data.bot.reject_group_invitation(data.group_id, data.flag)
       } else {
         data.request_type = "group"
-        data.sub_type = "add"
+        data.sub_type = data.event_type === "group_join_request" ? "add" : "invite"
         data.group_id = String(data.group_id)
         data.user_id = String(data.initiator_id)
         data.comment = data.comment
         data.flag = String(data.notification_seq)
+        Bot.makeLog("info", `加群请求：${data.sub_type} ${data.comment}(${data.flag})`, `${data.self_id} <= ${data.group_id}, ${data.user_id}`, true)
+        data.approve = (approve) => approve ? data.bot.accept_group_request(data.flag, data.sub_type === "add" ? "join_request" : "invited_join_request", data.group_id) : data.bot.reject_group_request(data.flag, data.sub_type === "add" ? "join_request" : "invited_join_request", data.group_id)
       }
-      Bot.em(`${data.post_type}.${data.request_type}`, data)
+      Bot.em(`${data.post_type}.${data.request_type}.${data.sub_type}`, data)
     }
 
     parseMsg(message) {
