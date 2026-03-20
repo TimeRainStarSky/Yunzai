@@ -160,6 +160,12 @@ ws:
             pickMember: (group_id, user_id) => this.pickMember({ self_id, bot: Bot[self_id] }, group_id, user_id),
             getFriendMap: () => this.getFriendMap({ self_id, bot: Bot[self_id] }),
             getGroupMap: () => this.getGroupMap({ self_id, bot: Bot[self_id] }),
+            get_friend_list: () => this.getFriendList({ self_id, bot: Bot[self_id] }),
+            get_friend_info: (user_id) => this.getFriendInfo({ self_id, bot: Bot[self_id], user_id }),
+            get_group_list: () => this.getGroupList({ self_id, bot: Bot[self_id] }),
+            get_group_info: (group_id) => this.getGroupInfo({ self_id, bot: Bot[self_id], group_id }),
+            get_group_member_list: (group_id) => this.getMemberList({ self_id, bot: Bot[self_id], group_id }),
+            get_group_member_info: (group_id, user_id) => this.getMemberInfo({ self_id, bot: Bot[self_id], group_id, user_id }),
             get_impl_info: () => this.callApi(apiBaseUrl, config.access_token, "get_impl_info"),
             get_user_profile: (user_id) => this.getProfile({ self_id, bot: Bot[self_id], user_id }),
             set_bio: (new_bio) => this.setBio({ self_id, bot: Bot[self_id] }, new_bio),
@@ -174,6 +180,32 @@ ws:
             reject_friend_request: (initiator_uid, is_filtered, reason) => this.rejectFriendRequest({ self_id, bot: Bot[self_id] }, initiator_uid, is_filtered, reason),
             accept_group_request: (notification_seq, notification_type, group_id, is_filtered) => this.acceptGroupRequest({ self_id, bot: Bot[self_id] }, notification_seq, notification_type, group_id, is_filtered),
             reject_group_request: (notification_seq, notification_type, group_id, is_filtered, reason) => this.rejectGroupRequest({ self_id, bot: Bot[self_id] }, notification_seq, notification_type, group_id, is_filtered, reason),
+            // 消息操作
+            recall_group_message: (group_id, message_seq) => this.recallGroupMsg({ self_id, bot: Bot[self_id], group_id }, message_seq),
+            recall_private_message: (user_id, message_seq) => this.recallPrivateMsg({ self_id, bot: Bot[self_id], user_id }, message_seq),
+            delete_msg: (message_id) => this.deleteMsg({ self_id, bot: Bot[self_id] }, message_id),
+            get_msg: (message_scene, peer_id, message_seq) => this.getMsg({ self_id, bot: Bot[self_id], message_scene, peer_id, message_seq }),
+            get_history_messages: (message_scene, peer_id, start_message_seq, limit) => this.getHistoryMessages({ self_id, bot: Bot[self_id], message_scene, peer_id, start_message_seq, limit }),
+            mark_message_as_read: (message_scene, peer_id, message_seq) => this.markMessageAsRead({ self_id, bot: Bot[self_id] }, message_scene, peer_id, message_seq),
+            // 群管理
+            set_group_name: (group_id, group_name) => this.setGroupName({ self_id, bot: Bot[self_id], group_id }, group_name),
+            set_group_card: (group_id, user_id, card) => this.setGroupCard({ self_id, bot: Bot[self_id], group_id }, user_id, card),
+            set_group_admin: (group_id, user_id, enable) => this.setGroupAdmin({ self_id, bot: Bot[self_id], group_id }, user_id, enable),
+            set_group_special_title: (group_id, user_id, title) => this.setGroupSpecialTitle({ self_id, bot: Bot[self_id], group_id }, user_id, title),
+            set_group_ban: (group_id, user_id, duration) => this.setGroupBan({ self_id, bot: Bot[self_id], group_id }, user_id, duration),
+            set_group_whole_ban: (group_id, enable) => this.setGroupWholeBan({ self_id, bot: Bot[self_id], group_id }, enable),
+            set_group_kick: (group_id, user_id) => this.setGroupKick({ self_id, bot: Bot[self_id], group_id }, user_id),
+            set_group_leave: (group_id) => this.setGroupLeave({ self_id, bot: Bot[self_id], group_id }),
+            // 好友操作
+            send_like: (user_id, times) => this.sendLike({ self_id, bot: Bot[self_id] }, user_id, times),
+            delete_friend: (user_id) => this.deleteFriend({ self_id, bot: Bot[self_id] }, user_id),
+            // 文件操作
+            upload_group_file: (group_id, file, folder, name) => this.uploadGroupFile({ self_id, bot: Bot[self_id], group_id }, file, folder, name),
+            delete_group_file: (group_id, file_id) => this.deleteGroupFile({ self_id, bot: Bot[self_id], group_id }, file_id),
+            get_group_files: (group_id, folder_id) => this.getGroupFilesList({ self_id, bot: Bot[self_id], group_id }, folder_id),
+            create_group_folder: (group_id, name) => this.createGroupFileFolder({ self_id, bot: Bot[self_id], group_id }, name),
+            delete_group_folder: (group_id, folder_id) => this.deleteGroupFileFolder({ self_id, bot: Bot[self_id], group_id }, folder_id),
+            getMemberMap: (group_id) => this.getMemberMap({ self_id, bot: Bot[self_id], group_id }),
           }
           if (!Bot.uin.includes(self_id)) Bot.uin.push(self_id)
 
@@ -195,6 +227,12 @@ ws:
           Bot[self_id].sendGroupForwardMsg = (group_id, msg) => this.sendGroupForwardMsg({ self_id, bot: Bot[self_id], group_id }, msg)
           Bot[self_id].getFriendMap = () => this.getFriendMap({ self_id, bot: Bot[self_id] })
           Bot[self_id].getGroupMap = () => this.getGroupMap({ self_id, bot: Bot[self_id] })
+          Bot[self_id].get_friend_list = () => this.getFriendList({ self_id, bot: Bot[self_id] })
+          Bot[self_id].get_friend_info = (user_id) => this.getFriendInfo({ self_id, bot: Bot[self_id], user_id })
+          Bot[self_id].get_group_list = () => this.getGroupList({ self_id, bot: Bot[self_id] })
+          Bot[self_id].get_group_info = (group_id) => this.getGroupInfo({ self_id, bot: Bot[self_id], group_id })
+          Bot[self_id].get_group_member_list = (group_id) => this.getMemberList({ self_id, bot: Bot[self_id], group_id })
+          Bot[self_id].get_group_member_info = (group_id, user_id) => this.getMemberInfo({ self_id, bot: Bot[self_id], group_id, user_id })
           Bot[self_id].get_impl_info = () => this.callApi(apiBaseUrl, config.access_token, "get_impl_info")
           Bot[self_id].get_user_profile = (user_id) => this.getProfile({ self_id, bot: Bot[self_id], user_id })
           Bot[self_id].set_bio = (new_bio) => this.setBio({ self_id, bot: Bot[self_id] }, new_bio)
@@ -209,6 +247,28 @@ ws:
           Bot[self_id].reject_friend_request = (initiator_uid, is_filtered, reason) => this.rejectFriendRequest({ self_id, bot: Bot[self_id] }, initiator_uid, is_filtered, reason)
           Bot[self_id].accept_group_request = (notification_seq, notification_type, group_id, is_filtered) => this.acceptGroupRequest({ self_id, bot: Bot[self_id] }, notification_seq, notification_type, group_id, is_filtered)
           Bot[self_id].reject_group_request = (notification_seq, notification_type, group_id, is_filtered, reason) => this.rejectGroupRequest({ self_id, bot: Bot[self_id] }, notification_seq, notification_type, group_id, is_filtered, reason)
+          Bot[self_id].recall_group_message = (group_id, message_seq) => this.recallGroupMsg({ self_id, bot: Bot[self_id], group_id }, message_seq)
+          Bot[self_id].recall_private_message = (user_id, message_seq) => this.recallPrivateMsg({ self_id, bot: Bot[self_id], user_id }, message_seq)
+          Bot[self_id].delete_msg = (message_id) => this.deleteMsg({ self_id, bot: Bot[self_id] }, message_id)
+          Bot[self_id].get_msg = (message_scene, peer_id, message_seq) => this.getMsg({ self_id, bot: Bot[self_id], message_scene, peer_id, message_seq })
+          Bot[self_id].get_history_messages = (message_scene, peer_id, start_message_seq, limit) => this.getHistoryMessages({ self_id, bot: Bot[self_id], message_scene, peer_id, start_message_seq, limit })
+          Bot[self_id].mark_message_as_read = (message_scene, peer_id, message_seq) => this.markMessageAsRead({ self_id, bot: Bot[self_id] }, message_scene, peer_id, message_seq)
+          Bot[self_id].set_group_name = (group_id, group_name) => this.setGroupName({ self_id, bot: Bot[self_id], group_id }, group_name)
+          Bot[self_id].set_group_card = (group_id, user_id, card) => this.setGroupCard({ self_id, bot: Bot[self_id], group_id }, user_id, card)
+          Bot[self_id].set_group_admin = (group_id, user_id, enable) => this.setGroupAdmin({ self_id, bot: Bot[self_id], group_id }, user_id, enable)
+          Bot[self_id].set_group_special_title = (group_id, user_id, title) => this.setGroupSpecialTitle({ self_id, bot: Bot[self_id], group_id }, user_id, title)
+          Bot[self_id].set_group_ban = (group_id, user_id, duration) => this.setGroupBan({ self_id, bot: Bot[self_id], group_id }, user_id, duration)
+          Bot[self_id].set_group_whole_ban = (group_id, enable) => this.setGroupWholeBan({ self_id, bot: Bot[self_id], group_id }, enable)
+          Bot[self_id].set_group_kick = (group_id, user_id) => this.setGroupKick({ self_id, bot: Bot[self_id], group_id }, user_id)
+          Bot[self_id].set_group_leave = (group_id) => this.setGroupLeave({ self_id, bot: Bot[self_id], group_id })
+          Bot[self_id].send_like = (user_id, times) => this.sendLike({ self_id, bot: Bot[self_id] }, user_id, times)
+          Bot[self_id].delete_friend = (user_id) => this.deleteFriend({ self_id, bot: Bot[self_id] }, user_id)
+          Bot[self_id].upload_group_file = (group_id, file, folder, name) => this.uploadGroupFile({ self_id, bot: Bot[self_id], group_id }, file, folder, name)
+          Bot[self_id].delete_group_file = (group_id, file_id) => this.deleteGroupFile({ self_id, bot: Bot[self_id], group_id }, file_id)
+          Bot[self_id].get_group_files = (group_id, folder_id) => this.getGroupFilesList({ self_id, bot: Bot[self_id], group_id }, folder_id)
+          Bot[self_id].create_group_folder = (group_id, name) => this.createGroupFileFolder({ self_id, bot: Bot[self_id], group_id }, name)
+          Bot[self_id].delete_group_folder = (group_id, folder_id) => this.deleteGroupFileFolder({ self_id, bot: Bot[self_id], group_id }, folder_id)
+          Bot[self_id].getMemberMap = (group_id) => this.getMemberMap({ self_id, bot: Bot[self_id], group_id })
           if (!Bot[self_id].pickUser) {
             Object.defineProperty(Bot[self_id], "pickUser", {
               get() { return this.pickFriend }
@@ -289,6 +349,22 @@ ws:
 
       const group_name = data.group_id ? data.bot.gl.get(data.group_id)?.group_name : null
       let user_name = data.bot.fl.get(data.user_id)?.nickname
+
+      data.sender = {
+        user_id: Number(data.user_id),
+        nickname: user_name || "",
+        sub_type: data.message_type,
+      }
+
+      if (data.message_type === "group") {
+        const member = data.bot.gml.get(data.group_id)?.get(data.user_id)
+        if (member) {
+          Object.assign(data.sender, {
+            ...member,
+            user_id: Number(member.user_id),
+          })
+        }
+      }
 
       const logMsg = data.raw_message.replace(/base64:\/\/([^"]+)/g, "base64://...")
       if (data.message_type === "group") {
@@ -478,8 +554,11 @@ ws:
         ...i,
         sendMsg: msg => this.sendPrivateMsg(i, msg),
         sendForwardMsg: msg => this.sendPrivateForwardMsg(i, msg),
+        recallMsg: (message_id) => this.recallPrivateMsg(i, message_id),
         getInfo: () => this.getFriendInfo(i),
         poke: () => this.sendFriendNudge(i),
+        thumbUp: (times) => this.sendLike(i, user_id, times),
+        delete: () => this.deleteFriend(i, user_id),
         getMsg: (message_seq) => this.getMsg({ ...i, message_scene: "private", peer_id: Number(user_id), message_seq }),
         getHistory: (start_message_seq, limit = 20) => this.getHistoryMessages({ ...i, message_scene: "private", peer_id: Number(user_id), start_message_seq, limit }),
         getAvatarUrl: () => `https://q.qlogo.cn/g?b=qq&s=0&nk=${user_id}`
@@ -496,12 +575,20 @@ ws:
         pickMember: user_id => this.pickMember(i, group_id, user_id),
         getInfo: () => this.getGroupInfo(i),
         getMemberMap: () => this.getMemberMap(i),
+        getMemberList: () => this.getMemberList(i),
         poke: (user_id) => this.sendGroupNudge({ ...i, user_id }),
+        pokeMember: (user_id) => this.sendGroupNudge({ ...i, user_id }),
         addEssence: (message_seq) => this.setGroupEssenceMessage({ ...i, message_seq }, true),
         removeEssence: (message_seq) => this.setGroupEssenceMessage({ ...i, message_seq }, false),
         getEssence: (page = 0, size = 50) => this.getGroupEssenceMessages(i, page, size),
         getMsg: (message_seq) => this.getMsg({ ...i, message_scene: "group", peer_id: Number(group_id), message_seq }),
         getHistory: (start_message_seq, limit = 20) => this.getHistoryMessages({ ...i, message_scene: "group", peer_id: Number(group_id), start_message_seq, limit }),
+        setName: (name) => this.setGroupName(i, name),
+        muteMember: (user_id, duration) => this.setGroupBan(i, user_id, duration),
+        kickMember: (user_id) => this.setGroupKick(i, user_id),
+        setWholeBan: (enable) => this.setGroupWholeBan(i, enable),
+        quit: () => this.setGroupLeave(i),
+        sendFile: (file, name) => this.uploadGroupFile(i, file, "/", name),
         fs: {
           upload: (file, folder = "/", name) => this.uploadGroupFile(i, file, folder, name),
           rm: (file_id) => this.deleteGroupFile(i, file_id),
@@ -517,9 +604,19 @@ ws:
       const i = { ...data, group_id: String(group_id), user_id: String(user_id) }
       return {
         ...i,
+        ...this.pickFriend(data, user_id),
+        group_id: String(group_id),
         getInfo: () => this.getMemberInfo(i),
         poke: () => this.sendGroupNudge(i),
-        getAvatarUrl: () => `https://q.qlogo.cn/g?b=qq&s=0&nk=${user_id}`
+        mute: (duration) => this.setGroupBan(i, user_id, duration),
+        kick: () => this.setGroupKick(i, user_id),
+        setCard: (card) => this.setGroupCard(i, user_id, card),
+        setAdmin: (enable) => this.setGroupAdmin(i, user_id, enable),
+        setTitle: (title) => this.setGroupSpecialTitle(i, user_id, title),
+        getAvatarUrl: () => `https://q.qlogo.cn/g?b=qq&s=0&nk=${user_id}`,
+        get is_friend() { return data.bot.fl.has(String(user_id)) },
+        get is_owner() { return this.role === "owner" },
+        get is_admin() { return this.role === "admin" || this.is_owner },
       }
     }
 
@@ -614,6 +711,110 @@ ws:
       return data.bot.sendApi("recall_group_message", {
         group_id: Number(data.group_id),
         message_seq: Number(message_id)
+      })
+    }
+
+    async recallPrivateMsg(data, message_id) {
+      Bot.makeLog("info", `撤回好友消息：${message_id}`, `${data.self_id} => ${data.user_id}`, true)
+      return data.bot.sendApi("recall_private_message", {
+        user_id: Number(data.user_id),
+        message_seq: Number(message_id)
+      })
+    }
+
+    async deleteMsg(data, message_id) {
+      // OneBot v11 兼容：尝试通过 message_id 撤回（需要上下文判断群/私聊）
+      Bot.makeLog("info", `撤回消息：${message_id}`, data.self_id, true)
+      return data.bot.sendApi("recall_group_message", { message_seq: Number(message_id) })
+    }
+
+    async markMessageAsRead(data, message_scene, peer_id, message_seq) {
+      return data.bot.sendApi("mark_message_as_read", {
+        message_scene,
+        peer_id: Number(peer_id),
+        message_seq: Number(message_seq)
+      })
+    }
+
+    async setGroupName(data, group_name) {
+      Bot.makeLog("info", `设置群名：${group_name}`, `${data.self_id} => ${data.group_id}`, true)
+      return data.bot.sendApi("set_group_name", {
+        group_id: Number(data.group_id),
+        new_group_name: group_name
+      })
+    }
+
+    async setGroupCard(data, user_id, card) {
+      Bot.makeLog("info", `设置群名片：${card}`, `${data.self_id} => ${data.group_id}, ${user_id}`, true)
+      return data.bot.sendApi("set_group_member_card", {
+        group_id: Number(data.group_id),
+        user_id: Number(user_id),
+        card
+      })
+    }
+
+    async setGroupAdmin(data, user_id, enable = true) {
+      Bot.makeLog("info", `${enable ? "设置" : "取消"}群管理员`, `${data.self_id} => ${data.group_id}, ${user_id}`, true)
+      return data.bot.sendApi("set_group_member_admin", {
+        group_id: Number(data.group_id),
+        user_id: Number(user_id),
+        is_set: enable
+      })
+    }
+
+    async setGroupSpecialTitle(data, user_id, title) {
+      Bot.makeLog("info", `设置群头衔：${title}`, `${data.self_id} => ${data.group_id}, ${user_id}`, true)
+      return data.bot.sendApi("set_group_member_special_title", {
+        group_id: Number(data.group_id),
+        user_id: Number(user_id),
+        special_title: title
+      })
+    }
+
+    async setGroupBan(data, user_id, duration = 1800) {
+      Bot.makeLog("info", `禁言群成员：${duration}秒`, `${data.self_id} => ${data.group_id}, ${user_id}`, true)
+      return data.bot.sendApi("set_group_member_mute", {
+        group_id: Number(data.group_id),
+        user_id: Number(user_id),
+        duration: Number(duration)
+      })
+    }
+
+    async setGroupWholeBan(data, enable = true) {
+      Bot.makeLog("info", `${enable ? "开启" : "关闭"}全员禁言`, `${data.self_id} => ${data.group_id}`, true)
+      return data.bot.sendApi("set_group_whole_mute", {
+        group_id: Number(data.group_id),
+        is_mute: enable
+      })
+    }
+
+    async setGroupKick(data, user_id) {
+      Bot.makeLog("info", `踢出群成员`, `${data.self_id} => ${data.group_id}, ${user_id}`, true)
+      return data.bot.sendApi("kick_group_member", {
+        group_id: Number(data.group_id),
+        user_id: Number(user_id)
+      })
+    }
+
+    async setGroupLeave(data) {
+      Bot.makeLog("info", `退群`, `${data.self_id} => ${data.group_id}`, true)
+      return data.bot.sendApi("leave_group", {
+        group_id: Number(data.group_id)
+      })
+    }
+
+    async sendLike(data, user_id, times = 1) {
+      Bot.makeLog("info", `点赞：${times}次`, `${data.self_id} => ${user_id}`, true)
+      return data.bot.sendApi("send_profile_like", {
+        user_id: Number(user_id),
+        count: times
+      })
+    }
+
+    async deleteFriend(data, user_id) {
+      Bot.makeLog("info", `删除好友`, `${data.self_id} => ${user_id}`, true)
+      return data.bot.sendApi("delete_friend", {
+        user_id: Number(user_id)
       })
     }
 
@@ -776,17 +977,111 @@ ws:
 
     async getFriendInfo(data) {
       const res = await data.bot.sendApi("get_friend_info", { user_id: Number(data.user_id) })
-      return res.data?.friend || res.data
+      const friend = res.data?.friend || res.data
+      if (friend) {
+        return {
+          ...friend,
+          user_id: Number(friend.user_id),
+          nickname: friend.nickname || "",
+          remark: friend.remark || "",
+          sex: friend.sex || "unknown",
+        }
+      }
+      return friend
+    }
+
+    async getFriendList(data) {
+      const res = await data.bot.sendApi("get_friend_list")
+      if (res.retcode === 0 && res.data.friends) {
+        return res.data.friends.map(f => ({
+          ...f,
+          user_id: Number(f.user_id),
+          nickname: f.nickname || "",
+          remark: f.remark || "",
+          sex: f.sex || "unknown",
+        }))
+      }
+      return []
     }
 
     async getGroupInfo(data) {
       const res = await data.bot.sendApi("get_group_info", { group_id: Number(data.group_id) })
-      return res.data?.group || res.data
+      const group = res.data?.group || res.data
+      if (group) {
+        return {
+          ...group,
+          group_id: Number(group.group_id),
+          group_name: group.group_name || "",
+          member_count: group.member_count || 0,
+          max_member_count: group.max_member_count || 2000,
+        }
+      }
+      return group
+    }
+
+    async getGroupList(data) {
+      const res = await data.bot.sendApi("get_group_list")
+      if (res.retcode === 0 && res.data.groups) {
+        return res.data.groups.map(g => ({
+          ...g,
+          group_id: Number(g.group_id),
+          group_name: g.group_name || "",
+          member_count: g.member_count || 0,
+          max_member_count: g.max_member_count || 2000,
+        }))
+      }
+      return []
     }
 
     async getMemberInfo(data) {
       const res = await data.bot.sendApi("get_group_member_info", { group_id: Number(data.group_id), user_id: Number(data.user_id) })
-      return res.data?.member || res.data
+      const member = res.data?.member || res.data
+      if (member) {
+        return {
+          ...member,
+          group_id: Number(member.group_id),
+          user_id: Number(member.user_id),
+          nickname: member.nickname || "",
+          card: member.card || "",
+          sex: member.sex || "unknown",
+          age: 0,
+          area: "",
+          join_time: member.join_time || 0,
+          last_sent_time: member.last_sent_time || 0,
+          level: String(member.level || 1),
+          role: member.role || "member",
+          unfriendly: false,
+          title: member.title || "",
+          title_expire_time: 0,
+          card_changeable: true
+        }
+      }
+      return member
+    }
+
+    async getMemberList(data) {
+      const res = await data.bot.sendApi("get_group_member_list", { group_id: Number(data.group_id) })
+      if (res.retcode === 0 && res.data.members) {
+        return res.data.members.map(m => ({
+          ...m,
+          group_id: Number(m.group_id),
+          user_id: Number(m.user_id),
+          nickname: m.nickname || "",
+          card: m.card || "",
+          sex: m.sex || "unknown",
+          age: 0,
+          area: "",
+          join_time: m.join_time || 0,
+          last_sent_time: m.last_sent_time || 0,
+          level: String(m.level || 1),
+          role: m.role || "member",
+          unfriendly: false,
+          title: m.title || "",
+          title_expire_time: 0,
+          card_changeable: true
+        }))
+      }
+      return []
     }
 
     load() {
