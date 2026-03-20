@@ -236,8 +236,6 @@ Bot.adapter.push(
             data: {
               name: i.nickname || "匿名消息",
               uin: String(Number(i.user_id) || 80000000),
-              nickname: i.nickname || "匿名消息",
-              user_id: String(Number(i.user_id) || 80000000),
               content,
               time: i.time,
             },
