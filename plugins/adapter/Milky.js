@@ -494,11 +494,21 @@ ws:
           return `base64://${Buffer.from(uri.data).toString("base64")}`
         }
         if (typeof uri !== "string") return uri
-        if (uri.startsWith("base64:///")) return uri.replace("base64:///", "base64://")
-        if (/^[a-zA-Z]:(\\|\/)/.test(uri) || (uri.startsWith("/") && !uri.startsWith("//"))) {
-          return `file://${uri}`
+
+        let res = uri
+        if (res.startsWith("base64://")) {
+          const data = res.substring(9)
+          const pad = data.length % 4
+          if (pad > 0) {
+            res += "=".repeat(4 - pad)
+          }
+          return res
         }
-        return uri
+
+        if (/^[a-zA-Z]:(\\|\/)/.test(res) || (res.startsWith("/") && !res.startsWith("//"))) {
+          return `file://${res}`
+        }
+        return res
       }
 
       for (let i of msg) {
@@ -671,10 +681,21 @@ ws:
           messages.push(...nested[0].data.messages)
         }
         if (segments.length) {
+          let uin = item.user_id || item.uin || (Bot.uin && Bot.uin[0]) || 80000000
+          let user_id = Number(uin)
+          if (isNaN(user_id) || user_id === 0) user_id = 80000000
+          
+          const nickname = item.nickname || item.sender_name || item.name || "机器人"
+          
           messages.push({
-            user_id: Number(item.user_id || Bot.uin[0]),
-            sender_name: item.nickname || item.sender_name || "Bot",
-            segments
+            user_id: user_id,
+            uin: String(user_id),
+            sender_name: nickname,
+            nickname: nickname,
+            segments,
+            message: segments,
+            avatar_url: `https://q.qlogo.cn/g?b=qq&s=0&nk=${user_id}`,
+            time: Number(item.time) || Math.floor(Date.now() / 1000)
           })
         }
       }
