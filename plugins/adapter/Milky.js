@@ -126,6 +126,8 @@ Bot.adapter.push(
         }
 
         const self_id = String(loginInfo.data.uin || loginInfo.data.user_id)
+        const exists = !!Bot[self_id]
+
         if (Bot[self_id]) {
           Bot[self_id].ws = ws
           Bot[self_id].sendApi = (action, params) =>
