@@ -674,6 +674,13 @@ Bot.adapter.push(
         busid,
       })
     }
+    // 获取私聊文件URL
+    getPrivateFileUrl(data, file_id) {
+      return data.bot.sendApi("get_private_file_url", { 
+        user_id: data.user_id, 
+        file_id 
+      });
+    }
 
     getGroupFs(data) {
       return {
@@ -747,6 +754,7 @@ Bot.adapter.push(
         getChatHistory: this.getFriendMsgHistory.bind(this, i),
         thumbUp: this.sendLike.bind(this, i),
         delete: this.deleteFriend.bind(this, i),
+        getFileUrl: this.getPrivateFileUrl.bind(this, i),
       }
     }
 
