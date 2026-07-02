@@ -56,6 +56,7 @@ Bot.adapter.push(
       if (!Array.isArray(msg)) msg = [msg]
       const msgs = []
       const forward = []
+      const files = []
       for (let i of msg) {
         if (typeof i !== "object") i = { type: "text", data: { text: i } }
         else if (!i.data) i = { type: i.type, data: { ...i, type: undefined } }
@@ -72,26 +73,35 @@ Bot.adapter.push(
           case "node":
             forward.push(...i.data)
             continue
+          case "file":
+            files.push({ file: i.data.file, name: i.data.name })
+            continue
           case "raw":
             i = i.data
             break
         }
 
-        if (i.data.file) i.data.file = await this.makeFile(i.data.file)
+        if (i.data?.file) i.data.file = await this.makeFile(i.data.file)
 
         msgs.push(i)
       }
-      return [msgs, forward]
+      return [msgs, forward, files]
     }
 
-    async sendMsg(msg, send, sendForwardMsg) {
-      const [message, forward] = await this.makeMsg(msg)
+    async sendMsg(msg, send, sendForwardMsg, sendFile) {
+      const [message, forward, files] = await this.makeMsg(msg)
       const ret = []
 
       if (forward.length) {
         const data = await sendForwardMsg(forward)
         if (Array.isArray(data)) ret.push(...data)
         else ret.push(data)
+      }
+      
+      for (const { file, name } of files) {
+        if (sendFile) {
+          ret.push(await sendFile(file, name || path.basename(file)))
+        }
       }
 
       if (message.length) ret.push(await send(message))
@@ -118,6 +128,7 @@ Bot.adapter.push(
           })
         },
         msg => this.sendFriendForwardMsg(data, msg),
+        (file, name) => this.sendFriendFile(data, file, name),
       )
     }
 
@@ -137,6 +148,7 @@ Bot.adapter.push(
           })
         },
         msg => this.sendGroupForwardMsg(data, msg),
+        (file, name) => this.sendGroupFile(data, file, undefined, name),
       )
     }
 
