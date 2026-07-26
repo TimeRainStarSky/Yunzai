@@ -42,6 +42,13 @@ Bot.adapter.push(
         })
     }
 
+    /** path.basename 只接受字符串，Buffer 与 base64:// 需另外取名 */
+    makeFileName(file, name) {
+      if (name) return name
+      if (typeof file === "string" && !file.startsWith("base64://")) return path.basename(file)
+      return `${Date.now().toString(36)}.file`
+    }
+
     async makeFile(file, opts) {
       file = await Bot.Buffer(file, {
         http: true,
@@ -52,7 +59,13 @@ Bot.adapter.push(
       return file
     }
 
-    async makeMsg(msg) {
+    /**
+     * @param msg 消息
+     * @param splitFile 是否将 file 段剥离到 files 由专用上传 API 发送
+     *   send_msg 需要剥离（部分协议端不再自动路由 file 段），
+     *   合并转发节点必须保留在 content 内，节点没有可用的上传 API
+     */
+    async makeMsg(msg, splitFile = true) {
       if (!Array.isArray(msg)) msg = [msg]
       const msgs = []
       const forward = []
@@ -74,8 +87,11 @@ Bot.adapter.push(
             forward.push(...i.data)
             continue
           case "file":
-            files.push({ file: i.data.file, name: i.data.name })
-            continue
+            if (splitFile) {
+              files.push({ file: i.data.file, name: i.data.name })
+              continue
+            }
+            break
           case "raw":
             i = i.data
             break
@@ -89,7 +105,8 @@ Bot.adapter.push(
     }
 
     async sendMsg(msg, send, sendForwardMsg, sendFile) {
-      const [message, forward, files] = await this.makeMsg(msg)
+      /** 无专用上传回调时(如频道)保持 file 段内联，行为与旧版一致，不静默丢弃 */
+      const [message, forward, files] = await this.makeMsg(msg, Boolean(sendFile))
       const ret = []
 
       if (forward.length) {
@@ -98,11 +115,8 @@ Bot.adapter.push(
         else ret.push(data)
       }
 
-      for (const { file, name } of files) {
-        if (sendFile) {
-          ret.push(await sendFile(file, name || path.basename(file)))
-        }
-      }
+      for (const { file, name } of files)
+        ret.push(await sendFile(file, this.makeFileName(file, name)))
 
       if (message.length) ret.push(await send(message))
       if (ret.length === 1) return ret[0]
@@ -240,7 +254,8 @@ Bot.adapter.push(
     async makeForwardMsg(msg) {
       const msgs = []
       for (const i of msg) {
-        const [content, forward] = await this.makeMsg(i.message)
+        /** 转发节点内保留 file 段，剥离会导致整段文件丢失，只含文件的节点还会整条消失 */
+        const [content, forward] = await this.makeMsg(i.message, false)
         if (forward.length) msgs.push(...(await this.makeForwardMsg(forward)))
         if (content.length)
           msgs.push({
@@ -636,7 +651,8 @@ Bot.adapter.push(
       })
     }
 
-    async sendFriendFile(data, file, name = path.basename(file)) {
+    async sendFriendFile(data, file, name) {
+      name = this.makeFileName(file, name)
       Bot.makeLog(
         "info",
         `发送好友文件：${name}(${file})`,
@@ -659,7 +675,8 @@ Bot.adapter.push(
       ).url
     }
 
-    async sendGroupFile(data, file, folder, name = path.basename(file)) {
+    async sendGroupFile(data, file, folder, name) {
+      name = this.makeFileName(file, name)
       Bot.makeLog(
         "info",
         `发送群文件：${folder || ""}/${name}(${file})`,
