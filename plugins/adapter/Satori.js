@@ -12,6 +12,7 @@ Bot.adapter.push(
     sessionSn = 0
     ws = null
     heartbeatTimer = null
+    reconnectTimer = null
 
     load() {
       if (!cfg.satori?.enable) return
@@ -73,7 +74,7 @@ Bot.adapter.push(
           method: "POST",
           headers,
           body: JSON.stringify(params),
-          timeout: this.timeout,
+          signal: AbortSignal.timeout(this.timeout),
         })
 
         if (!response.ok) {
@@ -548,7 +549,7 @@ Bot.adapter.push(
       if (!bot || bot.adapter !== this) {
         bot = this.makeBot(login)
         Bot.bots[bot.self_id] = bot
-        Bot.uin.push(bot.self_id)
+        if (!Bot.uin.includes(bot.self_id)) Bot.uin.push(bot.self_id)
         Bot.emit("online", bot)
         Bot.makeLog("mark", `注册Satori bot: ${bot.self_id}`, "Satori")
       } else {
@@ -562,8 +563,15 @@ Bot.adapter.push(
 
     // WebSocket
     connectWebSocket() {
-      if (this.ws) {
-        this.ws.close()
+      const oldWs = this.ws
+      this.ws = null
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer)
+        this.reconnectTimer = null
+      }
+      if (oldWs) {
+        this.stopHeartbeat()
+        oldWs.close()
       }
 
       Bot.makeLog("info", `Satori WebSocket: ${this.wsEndpoint}`, "Satori")
@@ -571,10 +579,12 @@ Bot.adapter.push(
         Bot.makeLog("info", `Satori token: ${this.token}`, "Satori")
       }
 
-      this.ws = new WebSocket(this.wsEndpoint)
+      const ws = new WebSocket(this.wsEndpoint)
+      this.ws = ws
 
-      this.ws.on("open", () => {
+      ws.on("open", () => {
         Bot.makeLog("mark", "Satori WebSocket 连接成功", "Satori")
+        if (this.ws !== ws) return
 
         const identifyBody = {
           sn: this.sessionSn,
@@ -584,28 +594,31 @@ Bot.adapter.push(
           identifyBody.token = this.token
         }
 
-        this.ws.send(
+        ws.send(
           JSON.stringify({
             op: 3, // IDENTIFY
             body: identifyBody,
           }),
         )
 
-        this.startHeartbeat()
+        this.startHeartbeat(ws)
       })
 
-      this.ws.on("message", data => {
+      ws.on("message", data => {
         try {
           const message = JSON.parse(data.toString())
+          if (this.ws !== ws) return
           this.handleWebSocketMessage(message)
         } catch (err) {
           Bot.makeLog("error", ["WebSocket 消息解析失败", err], "Satori")
         }
       })
 
-      this.ws.on("close", (code, reason) => {
+      ws.on("close", (code, reason) => {
         Bot.makeLog("warn", `Satori WebSocket 连接关闭: ${code} ${reason}`, "Satori")
+        if (this.ws !== ws) return
         this.stopHeartbeat()
+        this.ws = null
 
         // 清理
         const botsToRemove = []
@@ -617,24 +630,24 @@ Bot.adapter.push(
 
         for (const self_id of botsToRemove) {
           delete Bot.bots[self_id]
-          const index = Bot.uin.indexOf(self_id)
-          if (index > -1) {
-            Bot.uin.splice(index, 1)
-          }
+          for (let i = Bot.uin.length - 1; i >= 0; i--)
+            if (Bot.uin[i] == self_id) Bot.uin.splice(i, 1)
+          if (Bot.uin.now == self_id) delete Bot.uin.now
           Bot.makeLog("mark", `${this.name}(${this.id}) 已断开`, `${self_id}`, true)
           Bot.emit("offline", { self_id })
         }
 
         // 重连
-        setTimeout(() => {
-          if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
+        this.reconnectTimer = setTimeout(() => {
+          this.reconnectTimer = null
+          if (!this.ws) {
             Bot.makeLog("info", "尝试重连 Satori WebSocket", "Satori")
             this.connectWebSocket()
           }
         }, 5000)
       })
 
-      this.ws.on("error", err => {
+      ws.on("error", err => {
         Bot.makeLog("error", ["Satori WebSocket 错误", err], "Satori")
       })
     }
@@ -721,11 +734,11 @@ Bot.adapter.push(
       }
     }
 
-    startHeartbeat() {
+    startHeartbeat(ws = this.ws) {
       this.stopHeartbeat()
       this.heartbeatTimer = setInterval(() => {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          this.ws.send(JSON.stringify({ op: 1 })) // PING
+        if (this.ws === ws && ws?.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ op: 1 })) // PING
         }
       }, this.heartbeatInterval)
     }

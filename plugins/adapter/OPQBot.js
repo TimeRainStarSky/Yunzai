@@ -15,7 +15,8 @@ Bot.adapter.push(
     sendApi(id, CgiCmd, CgiRequest) {
       const ReqId = Math.round(Math.random() * 10 ** 16)
       const request = { BotUin: String(id), CgiCmd, CgiRequest, ReqId }
-      Bot[id].ws.sendMsg(request)
+      const ws = Bot[id].ws
+      ws.sendMsg(request)
       const cache = Promise.withResolvers()
       this.echo.set(ReqId, cache)
       const timeout = setTimeout(() => {

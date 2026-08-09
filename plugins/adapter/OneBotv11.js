@@ -405,7 +405,7 @@ Bot.adapter.push(
         gml = new Map()
         if (add || data.bot.gl.has(data.group_id)) data.bot.gml.set(data.group_id, gml)
       }
-      if (add || data.bot.gml.has(data.user_id)) gml.set(data.user_id, info)
+      if (add || gml.has(data.user_id)) gml.set(data.user_id, info)
       return info
     }
 
@@ -461,7 +461,7 @@ Bot.adapter.push(
     async getGuildMemberList(data) {
       const array = []
       for (const { user_id } of await this.getGuildMemberArray(data)) array.push(user_id)
-      return array.push
+      return array
     }
 
     async getGuildMemberMap(data) {
