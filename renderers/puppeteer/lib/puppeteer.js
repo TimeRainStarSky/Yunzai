@@ -268,6 +268,7 @@ export default class Puppeteer extends Renderer {
       /** 关闭浏览器 */
       this.restart(true)
       ret = []
+      return false
     } finally {
       if (overtime) clearTimeout(overtime)
       if (page) await page.close().catch(err => logger.error(err))
