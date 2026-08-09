@@ -21,6 +21,7 @@ export default class Puppeteer extends Renderer {
     })
     this.browser = false
     this.lock = false
+    this.browserInitPromise = null
     this.shoting = []
     /** 截图数达到时重启浏览器 避免生成速度越来越慢 */
     this.restartNum = 100
@@ -49,10 +50,19 @@ export default class Puppeteer extends Renderer {
    * 初始化chromium
    */
   async browserInit() {
+    if (this.browserInitPromise) return this.browserInitPromise
     if (this.browser) return this.browser
-    if (this.lock) return false
     this.lock = true
+    this.browserInitPromise = this.createBrowser()
+    try {
+      return await this.browserInitPromise
+    } finally {
+      this.browserInitPromise = null
+      this.lock = false
+    }
+  }
 
+  async createBrowser() {
     logger.info("puppeteer Chromium 启动中...")
 
     let connectFlag = false
@@ -98,7 +108,6 @@ export default class Puppeteer extends Renderer {
       })
     }
 
-    this.lock = false
     if (!this.browser) {
       logger.error("puppeteer Chromium 启动失败")
       return false
@@ -167,6 +176,7 @@ export default class Puppeteer extends Renderer {
     const start = Date.now()
 
     let ret = []
+    let page
     this.shoting.push(name)
 
     const puppeteerTimeout = this.puppeteerTimeout
@@ -183,8 +193,8 @@ export default class Puppeteer extends Renderer {
     }
 
     try {
-      const page = await this.browser.newPage()
-      const pageGotoParams = lodash.extend(this.pageGotoParams, data.pageGotoParams || {})
+      page = await this.browser.newPage()
+      const pageGotoParams = { ...this.pageGotoParams, ...data.pageGotoParams }
       await page.goto(`file://${_path}${lodash.trim(savePath, ".")}`, pageGotoParams)
       const body = (await page.$("#container")) || (await page.$("body"))
 
@@ -253,19 +263,17 @@ export default class Puppeteer extends Renderer {
           logger.mark(`[图片生成][${name}] 处理完成`)
         }
       }
-      page.close().catch(err => logger.error(err))
     } catch (err) {
       logger.error(`[图片生成][${name}] 图片生成失败`, err)
       /** 关闭浏览器 */
       this.restart(true)
-      if (overtime) clearTimeout(overtime)
       ret = []
-      return false
     } finally {
       if (overtime) clearTimeout(overtime)
+      if (page) await page.close().catch(err => logger.error(err))
+      const index = this.shoting.indexOf(name)
+      if (index !== -1) this.shoting.splice(index, 1)
     }
-
-    this.shoting.pop()
 
     if (ret.length === 0 || !ret[0]) {
       logger.error(`[图片生成][${name}] 图片生成为空`)
@@ -282,9 +290,9 @@ export default class Puppeteer extends Renderer {
     if (!this.browser?.close || this.lock) return
     if (!force) if (this.renderNum % this.restartNum !== 0 || this.shoting.length > 0) return
     logger.info(`puppeteer Chromium ${force ? "强制" : ""}关闭重启...`)
-    this.stop(this.browser)
+    const browser = this.browser
     this.browser = false
-    return this.browserInit()
+    return this.stop(browser).then(() => this.browserInit())
   }
 
   async stop(browser) {
