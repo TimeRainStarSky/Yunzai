@@ -25,6 +25,7 @@ const list = {
   "Route-Plugin": "https://git.trss.me/Yunzai-Route-Plugin",
   "ICQQ-Plugin": "https://git.trss.me/Yunzai-ICQQ-Plugin",
   "KOOK-Plugin": "https://git.trss.me/Yunzai-KOOK-Plugin",
+  "Secluded-Plugin": "https://github.com/Lovely02Y/Secluded-Adapter",
 }
 const map = {}
 for (const i in list) map[i.replace(/-[Pp]lugin$/, "")] = i
