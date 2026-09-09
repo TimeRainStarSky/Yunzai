@@ -779,6 +779,38 @@ Bot.adapter.push(
       return data.bot.sendApi("delete_essence_msg", { message_id })
     }
 
+    async getGroupTodoList(data) {
+      Bot.makeLog("info", "获取群待办列表", `${data.self_id} => ${data.group_id}`, true)
+      const list =
+        (await data.bot.sendApi("get_group_todo_list", { group_id: data.group_id })).data || []
+      for (const i of list) if (i?.message) i.message = this.parseMsg(i.message)
+      return list
+    }
+
+    setGroupTodo(data, message_id) {
+      Bot.makeLog("info", `设置群待办：${message_id}`, `${data.self_id} => ${data.group_id}`, true)
+      return data.bot.sendApi("set_group_todo", {
+        group_id: data.group_id,
+        message_id,
+      })
+    }
+
+    completeGroupTodo(data, message_id) {
+      Bot.makeLog("info", `完成群待办：${message_id}`, `${data.self_id} => ${data.group_id}`, true)
+      return data.bot.sendApi("complete_group_todo", {
+        group_id: data.group_id,
+        message_id,
+      })
+    }
+
+    cancelGroupTodo(data, message_id) {
+      Bot.makeLog("info", `取消群待办：${message_id}`, `${data.self_id} => ${data.group_id}`, true)
+      return data.bot.sendApi("cancel_group_todo", {
+        group_id: data.group_id,
+        message_id,
+      })
+    }
+
     pickFriend(data, user_id) {
       const i = {
         ...data.bot.fl.get(user_id),
@@ -895,6 +927,10 @@ Bot.adapter.push(
         getChatHistory: this.getGroupMsgHistory.bind(this, i),
         getHonorInfo: this.getGroupHonorInfo.bind(this, i),
         getEssence: this.getEssenceMsg.bind(this, i),
+        getTodoList: this.getGroupTodoList.bind(this, i),
+        setTodo: this.setGroupTodo.bind(this, i),
+        completeTodo: this.completeGroupTodo.bind(this, i),
+        cancelTodo: this.cancelGroupTodo.bind(this, i),
         getMemberArray: this.getMemberArray.bind(this, i),
         getMemberList: this.getMemberList.bind(this, i),
         getMemberMap: this.getMemberMap.bind(this, i),
