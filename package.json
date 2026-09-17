@@ -36,6 +36,7 @@
     "oicq": "link:lib/modules/oicq",
     "pm2": "^7.0.4",
     "puppeteer": "*",
+    "sharp": "*",
     "redis": "^4.7.1",
     "sequelize": "^6.37.8",
     "sqlite3": "npm:@karinjs/sqlite3@^0.4.3",
