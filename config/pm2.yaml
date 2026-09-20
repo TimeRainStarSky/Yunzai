@@ -3,5 +3,8 @@ apps:
     script: ./app.js
     max_memory_restart: 512M
     exp_backoff_restart_delay: 1000
+    # pm2 停止/重启进程的等待时间，需大于插件退出清理的耗时，
+    # 否则进程会被 SIGKILL 强杀，插件持有的子进程（如浏览器）将成为孤儿
+    kill_timeout: 10000
     env:
       app_type: pm2
