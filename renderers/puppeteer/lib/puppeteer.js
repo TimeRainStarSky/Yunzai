@@ -1,5 +1,4 @@
 import Renderer from "../../../lib/renderer/Renderer.js"
-import os from "node:os"
 import lodash from "lodash"
 import puppeteer from "puppeteer"
 import { ulid } from "ulid"
@@ -9,8 +8,6 @@ import fs from "node:fs/promises"
 import cfg from "../../../lib/config/config.js"
 
 const _path = process.cwd()
-// mac地址
-let mac = ""
 
 export default class Puppeteer extends Renderer {
   constructor(config) {
@@ -67,13 +64,9 @@ export default class Puppeteer extends Renderer {
 
     let connectFlag = false
     try {
-      // 获取Mac地址
-      if (!mac) {
-        mac = await this.getMac()
-        this.browserMacKey = `Yz:chromium:browserWSEndpoint:${mac}`
-      }
-      // 是否有browser实例
-      const browserUrl = (await redis.get(this.browserMacKey)) || this.config.wsEndpoint
+      // 本地浏览器属于启动它的 Node 进程，重启后不能复用即将关闭的旧连接。
+      // 仅显式配置的外部浏览器允许跨进程连接。
+      const browserUrl = this.config.wsEndpoint
       if (browserUrl) {
         try {
           const browserWSEndpoint = await puppeteer.connect({ browserWSEndpoint: browserUrl })
@@ -84,13 +77,14 @@ export default class Puppeteer extends Renderer {
           }
           logger.info(`puppeteer Chromium 连接成功 ${browserUrl}`)
         } catch (err) {
-          await redis.del(this.browserMacKey)
+          logger.warn(`puppeteer Chromium 连接失败 ${browserUrl}`)
         }
       }
     } catch {}
 
     if (!this.browser || !connectFlag) {
-      let config = this.config
+      // 环境覆盖仅用于 Chromium 子进程，保留 HOME/字体等其余启动环境。
+      let config = { ...this.config, env: { ...process.env, ...this.config.env } }
       if (!config.userDataDir) {
         await fs.rm("temp/puppeteer", { force: true, recursive: true }).catch(() => {})
         config = { ...config, userDataDir: `temp/puppeteer/${ulid()}` }
@@ -114,40 +108,12 @@ export default class Puppeteer extends Renderer {
     }
     if (!connectFlag) {
       logger.info(`puppeteer Chromium 启动成功 ${this.browser.wsEndpoint()}`)
-      if (this.browserMacKey) {
-        // 缓存一下实例30天
-        const expireTime = 60 * 60 * 24 * 30
-        await redis.set(this.browserMacKey, this.browser.wsEndpoint(), { EX: expireTime })
-      }
     }
 
     /** 监听Chromium实例是否断开 */
     this.browser.on("disconnected", () => this.restart(true))
 
     return this.browser
-  }
-
-  // 获取Mac地址
-  getMac() {
-    let mac = "00:00:00:00:00:00"
-    try {
-      const network = os.networkInterfaces()
-      let macFlag = false
-      for (const a in network) {
-        for (const i of network[a]) {
-          if (i.mac && i.mac !== mac) {
-            macFlag = true
-            mac = i.mac
-            break
-          }
-        }
-        if (macFlag) {
-          break
-        }
-      }
-    } catch (e) {}
-    mac = mac.replace(/:/g, "")
-    return mac
   }
 
   /**
