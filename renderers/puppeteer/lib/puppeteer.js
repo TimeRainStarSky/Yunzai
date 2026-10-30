@@ -1,5 +1,4 @@
 import Renderer from "../../../lib/renderer/Renderer.js"
-import { installImageProxy } from "./imageProxy.js"
 import lodash from "lodash"
 import puppeteer from "puppeteer"
 import { ulid } from "ulid"
@@ -84,7 +83,8 @@ export default class Puppeteer extends Renderer {
     } catch {}
 
     if (!this.browser || !connectFlag) {
-      let config = this.config
+      // 环境覆盖仅用于 Chromium 子进程，保留 HOME/字体等其余启动环境。
+      let config = { ...this.config, env: { ...process.env, ...this.config.env } }
       if (!config.userDataDir) {
         await fs.rm("temp/puppeteer", { force: true, recursive: true }).catch(() => {})
         config = { ...config, userDataDir: `temp/puppeteer/${ulid()}` }
@@ -148,7 +148,6 @@ export default class Puppeteer extends Renderer {
 
     let ret = []
     let page
-    let disposeImageProxy
     this.shoting.push(name)
 
     const puppeteerTimeout = this.puppeteerTimeout
@@ -166,9 +165,6 @@ export default class Puppeteer extends Renderer {
 
     try {
       page = await this.browser.newPage()
-      disposeImageProxy = await installImageProxy(page, {
-        warn: message => logger.warn(message),
-      })
       const pageGotoParams = { ...this.pageGotoParams, ...data.pageGotoParams }
       await page.goto(`file://${_path}${lodash.trim(savePath, ".")}`, pageGotoParams)
       const body = (await page.$("#container")) || (await page.$("body"))
@@ -246,7 +242,6 @@ export default class Puppeteer extends Renderer {
       return false
     } finally {
       if (overtime) clearTimeout(overtime)
-      disposeImageProxy?.()
       if (page) await page.close().catch(err => logger.error(err))
       const index = this.shoting.indexOf(name)
       if (index !== -1) this.shoting.splice(index, 1)

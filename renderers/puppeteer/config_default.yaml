@@ -18,6 +18,17 @@ args:
   - --disable-setuid-sandbox
   - --no-sandbox
   - --no-zygote
+  # 如需代理，在 config.yaml 中配置 Chromium 原生代理，地址按部署环境填写：
+  # - --proxy-server=socks5://127.0.0.1:1080
+
+# Chromium 子进程环境覆盖，与主进程环境合并，不修改 Node 的环境。
+# 通过 ProxyChains 启动时，proxy_dns 的进程内映射可能导致 Chromium 图片连接失败。
+# 改用上述原生代理时，可仅在浏览器子进程中禁用 ProxyChains 注入：
+# env:
+#   LD_PRELOAD: ""
+#   PROXYCHAINS_CONF_FILE: ""
+#   PROXYCHAINS_QUIET_MODE: ""
+# 如果 LD_PRELOAD 还包含其他必需库，应保留它们，只移除 libproxychains 项。
 
 # puppeteer截图超时时间
 puppeteerTimeout:
