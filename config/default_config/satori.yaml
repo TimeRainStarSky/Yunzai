@@ -1,0 +1,26 @@
+# Satori 协议配置
+
+# 是否启用 Satori 适配器
+enable: false
+
+# HTTP API 终结点
+http_endpoint: http://127.0.0.1:5140/satori/v1
+# liteloader onebot： http://127.0.0.1:5600/v1
+# server-satori： http://127.0.0.1:5140/satori/v1
+
+# WebSocket 事件终结点
+ws_endpoint: ws://127.0.0.1:5140/satori/v1/events
+# liteloader onebot： ws://127.0.0.1:5600/v1/events
+# server-satori： ws://127.0.0.1:5140/satori/v1/events
+
+# API 访问令牌
+token: ""
+
+# 平台名称
+platform: satori
+
+# 超时时间 (毫秒)
+timeout: 60000
+
+# 心跳间隔 (毫秒)
+heartbeat_interval: 10000

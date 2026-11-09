@@ -1,0 +1,23 @@
+# 萌卡 NT（MengKa）适配器配置
+# 本文件为默认配置，首次启动会自动复制到 config/config/mkqq.yaml
+# 首次使用请先填写下方 token，否则适配器不会启动
+# 修改后约 5 秒自动热重载；path 变更需重启
+
+# 反向 WebSocket 路径：插件端连接 ws://<Yunzai 地址>:2536/MKQQ
+path: MKQQ
+
+# 额外监听路径，例如 [MKQQ2, mk]
+paths: []
+
+# 鉴权令牌：插件端 token / Authorization: Bearer <token> 必须与这里完全一致
+# 必须填写：留空时适配器不启动（留空放行等于任何能连上该端口的人都能伪造任意账号的事件）
+token: ""
+
+# 校验插件端的 X-Meng-Ka-Service 头，留空不校验
+service: ""
+
+# 接口超时（毫秒）
+timeout: 30000
+
+# 是否把机器人自己发出的消息也当消息事件上报
+report_message_sent: false

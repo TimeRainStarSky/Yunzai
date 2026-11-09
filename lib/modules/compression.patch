@@ -1,0 +1,21 @@
+diff --git a/index.js b/index.js
+--- a/index.js
++++ b/index.js
+@@ -37,1 +37,1 @@
+-var hasBrotliSupport = 'createBrotliCompress' in zlib
++var hasZstdSupport = 'createZstdCompress' in zlib
+@@ -44,4 +44,4 @@
+-var SUPPORTED_ENCODING = hasBrotliSupport ? ['br', 'gzip', 'deflate', 'identity'] : ['gzip', 'deflate', 'identity']
+-var PREFERRED_ENCODING = hasBrotliSupport ? ['br', 'gzip'] : ['gzip']
++var SUPPORTED_ENCODING = hasZstdSupport ? ['zstd', 'br', 'gzip', 'deflate', 'identity'] : ['br', 'gzip', 'deflate', 'identity']
++var PREFERRED_ENCODING = hasZstdSupport ? ['zstd', 'br', 'gzip'] : ['br', 'gzip']
+ 
+-var encodingSupported = ['gzip', 'deflate', 'identity', 'br']
++var encodingSupported = ['gzip', 'deflate', 'identity', 'br', 'zstd']
+@@ -61,1 +61,0 @@
+-  if (hasBrotliSupport) {
+@@ -69,1 +68,0 @@
+-  }
+@@ -218,1 +216,2 @@
++: method === 'zstd' ? zlib.createZstdCompress(opts.zstd)
+           : zlib.createDeflate(opts)

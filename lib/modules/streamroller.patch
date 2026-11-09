@@ -1,0 +1,17 @@
+diff --git a/lib/fileNameFormatter.js b/lib/fileNameFormatter.js
+--- a/lib/fileNameFormatter.js
++++ b/lib/fileNameFormatter.js
+@@ -3,1 +3,1 @@
+-const ZIP_EXT = ".gz";
++const ZIP_EXT = ".zst";
+--- a/lib/fileNameParser.js
++++ b/lib/fileNameParser.js
+@@ -2,1 +2,1 @@
+-const ZIP_EXT = ".gz";
++const ZIP_EXT = ".zst";
+diff --git a/lib/moveAndMaybeCompressFile.js b/lib/moveAndMaybeCompressFile.js
+--- a/lib/moveAndMaybeCompressFile.js
++++ b/lib/moveAndMaybeCompressFile.js
+@@ -44,1 +44,1 @@
+-                readStream.pipe(zlib.createGzip()).pipe(writeStream);
++                readStream.pipe(zlib.createZstdCompress()).pipe(writeStream);

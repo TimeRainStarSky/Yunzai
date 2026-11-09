@@ -1,0 +1,5 @@
+{
+  "name": "lodash",
+  "type": "module",
+  "main": "index.js"
+}

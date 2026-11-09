@@ -1,0 +1,55 @@
+{
+  "name": "trss-yunzai",
+  "version": "3.1.3",
+  "author": "TimeRainStarSky, Yoimiya-Kokomi, Le-niao",
+  "description": "Bot",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "app": "node .",
+    "dev": "node . dev",
+    "web": "node lib/tools/web.js",
+    "start": "pm2 start config/pm2.yaml",
+    "stop": "pm2 stop config/pm2.yaml",
+    "restart": "pm2 restart config/pm2.yaml",
+    "log": "pm2 log --lines 100",
+    "lint": "git ls-files '*.js'|xargs prettier --write --list-different"
+  },
+  "dependencies": {
+    "art-template": "4.13.2",
+    "chalk": "^6.0.1",
+    "chokidar": "^6.0.0",
+    "compression": "^1.8.2",
+    "dayjs": "^1.11.23",
+    "es-toolkit": "^1.53.1",
+    "express": "^5.3.0",
+    "file-type": "^22.3.0",
+    "https-proxy-agent": "^7.0.6",
+    "image-size": "^2.0.4",
+    "level": "^10.0.0",
+    "lodash": "link:lib/modules/lodash",
+    "log4js": "^6.9.1",
+    "md5": "link:lib/modules/md5",
+    "moment": "link:lib/modules/moment",
+    "node-fetch": "link:lib/modules/node-fetch",
+    "node-schedule": "^2.1.2",
+    "oicq": "link:lib/modules/oicq",
+    "pm2": "^7.1.1",
+    "puppeteer": "*",
+    "redis": "^4.7.1",
+    "sequelize": "^6.37.8",
+    "shotium": "npm:@pixel.js/shotium@^0.12.4",
+    "sqlite3": "npm:@karinjs/sqlite3@^0.4.3",
+    "strip-ansi": "^7.2.0",
+    "ulid": "^3.0.2",
+    "ws": "^8.22.0",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10"
+  },
+  "imports": {
+    "#miao": "./plugins/miao-plugin/components/index.js",
+    "#miao.models": "./plugins/miao-plugin/models/index.js"
+  }
+}

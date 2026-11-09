@@ -1,0 +1,13 @@
+/config/*
+!/config/default_config
+/logs
+/node_modules
+/plugins/*
+!/plugins/adapter
+!/plugins/system
+!/plugins/other
+/renderers/*/config.yaml
+/resources
+/dump.rdb
+/pnpm-lock.yaml
+/*.sh
