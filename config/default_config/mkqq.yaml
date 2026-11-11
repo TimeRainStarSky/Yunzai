@@ -1,0 +1,21 @@
+# 萌卡 NT 适配器配置（放到 config/default_config/MKQQ.yaml，同时复制一份到 config/config/MKQQ.yaml）
+# 修改后约 5 秒自动热重载；path 变更需重启
+
+# 反向 WebSocket 路径：插件端连接 ws://<Yunzai 地址>:2536/MKQQ
+path: MKQQ
+
+# 额外监听路径，例如 [MKQQ2, mk]
+paths: []
+
+# 鉴权令牌：插件端 token / Authorization: Bearer <token> 必须与这里完全一致
+# 留空 = 不校验（任何人连上该端口都会被接受，公网环境务必设置）
+token: ""
+
+# 校验插件端的 X-Meng-Ka-Service 头，留空不校验
+service: ""
+
+# 接口超时（毫秒）
+timeout: 30000
+
+# 是否把机器人自己发出的消息也当消息事件上报
+report_message_sent: false
